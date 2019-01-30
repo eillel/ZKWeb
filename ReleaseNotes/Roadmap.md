@@ -1,19 +1,23 @@
-2.1.2
+2.3
 
-- Update project creator, support inplace upgrade for templates
-- Update dapper context since query transaction is supported in dommel
+- More code refactory
 - Add EFCore support of WithSerialization
+- Add EFCore support of lazy load
+- Test EFCore with default plugins
+- Performance moniting interface
+	- Report http request time to interface
+	- Report database operation time to interface
 
-2.2
+3.0
 
-- Performance moniting support
-	- https://github.com/ButterflyAPM/butterfly
+- Dynamic plugin reload support
+	- On .NET Framework: Multiple AppDomain
+	- On .NET Core: Collectible Assembly (3.0+)
+
+Future
+
+- Update dapper context since query transaction is supported in dommel
+	- It's in 2.0 beta, not stabel yet
+- APM Integration
 	- https://github.com/ButterflyAPM/butterfly-csharp
-- Find a solution to let vs ignore response exception
-
-Misc
-
-- Provide create database script for dapper (Demo, MVVMDemo)
-- Update document for visual page editor
-- More execution performance improvement
-- More database performance improvement
+	- https://github.com/OpenSkywalking/skywalking-netcore

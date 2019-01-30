@@ -64,14 +64,18 @@ namespace ZKWeb.Web {
 			var action = GetAction(context.Request.Path, context.Request.Method);
 			if (action != null) {
 				var result = action();
-				// Write response
-				result.WriteResponse(context.Response);
-				// If result is disposable, dispose it
+				if (!context.Response.IsEnded) {
+					// Write response
+					result.WriteResponse(context.Response);
+				}
 				if (result is IDisposable disposable) {
+					// If result is disposable, dispose it
 					disposable.Dispose();
 				}
-				// End response
-				context.Response.End();
+				if (!context.Response.IsEnded) {
+					// End response
+					context.Response.End();
+				}
 			}
 		}
 
@@ -88,7 +92,7 @@ namespace ZKWeb.Web {
 		/// </summary>
 		public virtual void RegisterController(ContainerFactoryData factoryData) {
 			var type = factoryData.ImplementationTypeHint;
-			var factory = (Func<IController>)factoryData.GenericFactory;
+			Func<IController> factory = () => (IController)factoryData.GetInstance(Application.Ioc, type);
 			// Calculate path base from attribute or controller name - suffix
 			var actionBaseAttribute = type.GetCustomAttribute<ActionBaseAttribute>();
 			string pathBase;
@@ -149,9 +153,10 @@ namespace ZKWeb.Web {
 		/// 注册控制器类型, 重用类型是Transient<br/>
 		/// </summary>
 		public virtual void RegisterController(Type type) {
-			Application.Ioc.NonGenericBuildAndWrapFactory(
-				type, ReuseType.Transient, out var genericFactory, out var objectFactory);
-			var factoryData = new ContainerFactoryData(genericFactory, objectFactory, type);
+			var factoryData = new ContainerFactoryData(
+				ContainerFactoryBuilder.BuildFactory(type),
+				ReuseType.Transient,
+				type);
 			RegisterController(factoryData);
 		}
 
@@ -160,10 +165,7 @@ namespace ZKWeb.Web {
 		/// 注册控制器类型, 重用类型是Transient<br/>
 		/// </summary>
 		public virtual void RegisterController<T>() {
-			var genericFactory = Application.Ioc.GenericBuildAndWrapFactory<T>(ReuseType.Transient);
-			var objectFactory = new Func<object>(() => genericFactory());
-			var factoryData = new ContainerFactoryData(genericFactory, objectFactory, typeof(T));
-			RegisterController(factoryData);
+			RegisterController(typeof(T));
 		}
 
 		/// <summary>
@@ -171,11 +173,10 @@ namespace ZKWeb.Web {
 		/// 注册控制器实例, 重用类型是Singleton<br/>
 		/// </summary>
 		public virtual void RegisterController(IController controller) {
-			Application.Ioc.NonGenericWrapFactory(
-				controller.GetType(), () => controller, ReuseType.Transient,
-				out var genericFactory, out var objectFactory);
 			var factoryData = new ContainerFactoryData(
-				genericFactory, objectFactory, controller.GetType());
+				(c, s) => controller,
+				ReuseType.Singleton,
+				controller.GetType());
 			RegisterController(factoryData);
 		}
 
